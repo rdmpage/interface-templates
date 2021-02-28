@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<title>Grid</title>
+
+
+	<style>
+	body {
+	  padding:0px;
+	  margin:0px;
+	  font-family:sans-serif;
+	  overflow:hidden; /* stop any scrolling of whole browser contents */
+	}
+	
+	
+	.content {
+		display:flex;
+	}
+	
+	/* left column */
+	.left_column {
+		width:300px;
+		height:100vh;
+		background-color:orange;
+		/* padding:2px; */
+	}
+	
+	.panel {
+		width:calc(100vw - 300px);
+		height:100vh;
+		background-color:yellow;
+	
+	}
+	
+	.top {
+		
+		height:50%;
+		background-color:green;
+	
+	}
+	
+	.bottom {
+		
+		height:50%;
+		background-color:red;
+	
+	}		
+
+
+	
+	
+	</style>
+	
+</head>
+<body>
+
+	<!-- three columns -->
+	<div class="content"">
+
+		<!-- left column -->
+		<div class="left_column">
+			Fixed width column
+		</div>
+
+		<!-- right column -->
+		<div class="panel">
+			<div class="top">
+				Top panel
+			</div>
+
+			<div class="bottom">
+				Bottom panel
+			</div>
+		
+		
+		</div>
+
+	
+	</div>
+
+
+</body>
+</html>

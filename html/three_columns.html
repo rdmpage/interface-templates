@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<title>Three columns</title>
+
+
+	<style>
+	body {
+	  padding:0px;
+	  margin:0px;
+	  font-family:sans-serif;
+	  overflow:hidden; /* stop any scrolling of whole browser contents */
+	}
+	
+	
+	.content {
+		display:flex;
+	}
+	
+	/* left column */
+	.left_column {
+		width:300px;
+		height:100vh;
+		background-color:orange;
+		/* padding:2px; */
+	}
+
+	/* middle column */
+	.middle_column {
+		/* width: calc((100% - 300px)/2); */	/* 50% of remaining width */
+		width:400px;
+		height:100vh;
+		border-left:1px solid red;
+		background-color:yellow;		
+	}
+	
+	/* right column */
+	.right_column {
+		/* width: calc((100% - 300px)/2); */ /* 50% of remaining width */
+		width:calc(100vw - 700px);
+		height:100vh;
+		border-left:1px solid red;
+		background-color:green;		
+	}	
+
+
+	
+	
+	</style>
+	
+</head>
+<body>
+
+	<!-- three columns -->
+	<div class="content"">
+
+		<!-- left column -->
+		<div class="left_column">
+			Fixed width left column
+		</div>
+
+		<!-- middle column -->
+		<div class="middle_column">
+			Fixed width middle column
+		</div>
+
+		<!-- right column -->
+		<div class="right_column">
+			Variable width right column
+		</div>
+
+	
+	</div>
+
+
+</body>
+</html>

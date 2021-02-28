@@ -1,0 +1,446 @@
+<html>
+<head>
+</head>
+<body>
+
+<div id="tree"></div>
+
+<script>
+
+/**
+ * Returns a random number between min (inclusive) and max (exclusive)
+ */
+function getRandomArbitrary(min, max) {
+    return Math.random() * (max - min) + min;
+}
+
+/**
+ * Returns a random integer between min (inclusive) and max (inclusive)
+ * Using Math.round() will give you a non-uniform distribution!
+ */
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+//--------------------------------------------------------------------------------------------------
+// http://stackoverflow.com/questions/894860/set-a-default-parameter-value-for-a-javascript-function
+function Node(label, id)
+{
+	this.ancestor = null;
+	this.child = null;
+	this.sibling = null;
+	this.label = typeof label !== 'undefined' ? label : '';
+	this.id = id;
+	
+	this.data = [];
+}
+
+//--------------------------------------------------------------------------------------------------
+Node.prototype.IsLeaf = function() 
+{
+	return (!this.child);
+}
+
+//--------------------------------------------------------------------------------------------------
+Node.prototype.GetRightMostSibling = function() 
+{
+	var p = this;
+	while (p.sibling)
+	{
+		p = p.sibling;
+	}
+	return p;
+}
+
+//--------------------------------------------------------------------------------------------------
+function Tree()
+{
+	this.root = null;
+	this.label_to_node_map = [];
+	this.nodes = [];
+	this.rooted = true;
+}
+
+//--------------------------------------------------------------------------------------------------
+Tree.prototype.NewNode = function(label, id)
+{
+	var node = new Node(label, id);
+	this.nodes[node.id] = node;	
+	if (typeof label !== undefined)
+	{
+		this.label_to_node_map[label] = node.id;
+	}
+	
+	return node;
+}
+
+
+
+
+
+//--------------------------------------------------------------------------------------------------
+function NodeIterator(root)
+{
+	this.root = root;
+	this.cur = null;
+	this.stack = [];
+}
+
+//--------------------------------------------------------------------------------------------------
+NodeIterator.prototype.Begin = function() 
+{
+	this.cur = this.root;
+	while (this.cur.child)
+	{
+		this.stack.push(this.cur);
+		this.cur = this.cur.child;
+	}
+	return this.cur;
+}
+
+//--------------------------------------------------------------------------------------------------
+NodeIterator.prototype.Next = function() 
+{
+	if (this.stack.length == 0)
+	{
+		this.cur = null;
+	}
+	else
+	{
+		if (this.cur.sibling)
+		{
+			var p = this.cur.sibling;
+			while (p.child)
+			{
+				this.stack.push(p);
+				p = p.child;
+			}
+			this.cur = p;
+		}
+		else
+		{
+			this.cur = this.stack.pop();
+		}
+	}
+	return this.cur;
+}
+
+//--------------------------------------------------------------------------------------------------
+PreorderIterator.prototype = new NodeIterator;
+
+function PreorderIterator()
+{
+	NodeIterator.apply(this, arguments)
+};
+
+//--------------------------------------------------------------------------------------------------
+PreorderIterator.prototype.Begin = function() 
+{
+	this.cur = this.root;
+	return this.cur;
+}
+
+//--------------------------------------------------------------------------------------------------
+PreorderIterator.prototype.Next = function() 
+{
+	if (this.cur.child)
+	{
+		this.stack.push(this.cur);
+		this.cur = this.cur.child;
+	}
+	else
+	{
+		while (this.stack.length > 0 && this.cur.sibling == null)
+		{
+			this.cur = this.stack.pop();
+		}
+		if (this.stack.length == 0)
+		{
+			this.cur = null;
+		}
+		else
+		{
+			this.cur = this.cur.sibling;
+		}
+	}
+	return this.cur;
+}
+
+
+//----------------------------------------------------------------------------------------
+Tree.prototype.AddNodeTo = function(node, ancestor) {
+	if (ancestor.child) {
+		ancestor.child.GetRightMostSibling().sibling = node;
+	} else {
+		ancestor.child = node;
+	}
+	node.ancestor = ancestor;
+}
+
+
+//----------------------------------------------------------------------------------------
+
+// create a tree from a set of triples
+
+// 
+
+	var t = new Tree();
+	var node = null;
+
+	var node = t.NewNode('Scarabaeini', '0e20015e-237f-492b-943f-102caa8acc5b');
+	t.root = node;
+
+	// add 
+	node = t.NewNode('Canthonosoma', '073fdcb9-e460-45ff-9302-570bc21ef116');	
+	t.AddNodeTo(node, t.nodes['0e20015e-237f-492b-943f-102caa8acc5b']);
+
+	node = t.NewNode('Canthonosoma macleayi', '478877c3-1e44-4811-92c2-80833bb7cac3');	
+	t.AddNodeTo(node, t.nodes['073fdcb9-e460-45ff-9302-570bc21ef116']);
+
+	
+	node = t.NewNode('name1', 'id1');	
+	t.AddNodeTo(node, t.nodes['478877c3-1e44-4811-92c2-80833bb7cac3']);
+	
+	node = t.NewNode('ref1', 'id2');	
+	t.AddNodeTo(node, t.nodes['id1']);
+	
+	node = t.NewNode('ref2', 'id3');	
+	t.AddNodeTo(node, t.nodes['id1']);
+
+	node = t.NewNode('name2', 'id6');	
+	t.AddNodeTo(node, t.nodes['478877c3-1e44-4811-92c2-80833bb7cac3']);
+	
+	node = t.NewNode('ref7', 'id7');	
+	t.AddNodeTo(node, t.nodes['id6']);
+	
+
+
+	node = t.NewNode('Canthonosoma castelnaui', '9ac67378-bbcc-4dc7-a122-22a162aca279');	
+	t.AddNodeTo(node, t.nodes['073fdcb9-e460-45ff-9302-570bc21ef116']);
+
+	node = t.NewNode('Canthonosoma mastersii', 'cf10fb86-cea1-4d0f-9ad8-e598efede086');	
+	t.AddNodeTo(node, t.nodes['073fdcb9-e460-45ff-9302-570bc21ef116']);
+	
+	node = t.NewNode('name3', 'id4');	
+	t.AddNodeTo(node, t.nodes['cf10fb86-cea1-4d0f-9ad8-e598efede086']);
+	
+	node = t.NewNode('ref3', 'id5');	
+	t.AddNodeTo(node, t.nodes['id4']);
+	
+
+
+	node = t.NewNode('Monoplistes', '16bf099d-b725-4960-9531-fcc14fd41aa2');	
+	t.AddNodeTo(node, t.nodes['0e20015e-237f-492b-943f-102caa8acc5b']);
+
+	node = t.NewNode('Monoplistes tropicus', '2dcf7471-a421-4493-824b-d7ff70d034bd');	
+	t.AddNodeTo(node, t.nodes['16bf099d-b725-4960-9531-fcc14fd41aa2']);
+
+	node = t.NewNode('Monoplistes curvipes', '62161ee4-8019-43de-9e33-195a1d6401f3');	
+	t.AddNodeTo(node, t.nodes['16bf099d-b725-4960-9531-fcc14fd41aa2']);
+
+	node = t.NewNode('Monoplistes haroldi', '969b3ad6-14bb-477a-99b3-09ded7cdd46b');	
+	t.AddNodeTo(node, t.nodes['16bf099d-b725-4960-9531-fcc14fd41aa2']);
+
+	node = t.NewNode('Monoplistes occidentalis', '9a580181-d780-4eeb-b22c-b8e66b5b80df');	
+	t.AddNodeTo(node, t.nodes['16bf099d-b725-4960-9531-fcc14fd41aa2']);
+
+	node = t.NewNode('Monoplistes phanophilus', 'ee153051-7360-4488-b78e-712758a40ddd');	
+	t.AddNodeTo(node, t.nodes['16bf099d-b725-4960-9531-fcc14fd41aa2']);
+
+	node = t.NewNode('Monoplistes leai', 'f507e76d-ce04-4d96-89fc-f14f081d2725');	
+	t.AddNodeTo(node, t.nodes['16bf099d-b725-4960-9531-fcc14fd41aa2']);
+
+
+	// dump	
+	for (var i in t.nodes) {
+		console.log(t.nodes[i].label + ' ' + t.nodes[i].id);
+	}
+	
+	// dump to JSON object
+	/*
+	{
+		var stack = [];
+		var curnode = t.root;
+	
+		json = '';
+	
+		while (curnode)
+		{
+			if (curnode.child)
+			{
+				json += '{';
+				json += '"' + curnode.label + ':"';
+				stack.push(curnode);
+				curnode = curnode.child;
+			}
+			else
+			{
+				json += 
+			
+				if (curnode.ancestor == t.root) {
+					html += '<h3>' + curnode.label + '</h3>';
+				} else {
+					html += '<div style="float:left;height:60px;margin:2px;background-color:rgb(242,242,242);line-height:60px;">';	
+					html += curnode.label;
+					html += '</div>';
+				
+				
+				}
+			
+				while (stack.length > 0 && curnode.sibling == null)
+				{
+					curnode = stack.pop();
+					json += '}';
+				}
+			
+				if (stack.length == 0)
+				{
+					curnode = null;
+				}
+				else
+				{
+					json += ',';
+					curnode = curnode.sibling;
+				}
+			}
+		}	
+	
+		console.log(html);	
+	
+	}
+	*/	
+	
+	// dump to HTML
+	var stack = [];
+	var curnode = t.root;
+	
+	html = '';
+	
+	while (curnode)
+	{
+		console.log('visiting ' + curnode.label);
+		if (curnode.child)
+		{
+			if (curnode == t.root) {
+				// ignore
+			} else {
+				if (curnode.ancestor == t.root) {
+					html += '<h3>' + curnode.label + '</h3>';
+					html += '<div style="position:relative;">';
+				} else {	
+					html += '<div style="float:left;height:60px;margin:2px;background-color:rgb(242,242,242);line-height:60px;">';	
+					html += curnode.label;
+					html += '</div>';
+					//html += '-';
+				}
+			}
+						
+			stack.push(curnode);
+			curnode = curnode.child;
+		}
+		else
+		{
+			if (curnode.ancestor == t.root) {
+				html += '<h3>' + curnode.label + '</h3>';
+			} else {
+			
+				if (curnode.id.match(/^id/)) {
+					html += '<div style="float:left;height:60px;width:40px;margin:2px;background-color:cyan;line-height:60px;">';				
+					html += curnode.label;
+					html += '</div>';
+				} else {			
+					html += '<div style="float:left;height:60px;margin:2px;background-color:rgb(242,242,242);line-height:60px;">';	
+					html += curnode.label;
+					html += '</div>';
+				}
+				
+				/*
+				var n = getRandomInt(1,3);
+				for (var i=0; i < n; i++) {
+					html += '<div style="float:left;height:60px;width:40px;margin:2px;background-color:cyan;line-height:60px;">';					
+					html += '</div>';				
+				}
+
+				n = getRandomInt(1,5);
+				for (var i=0; i < n; i++) {
+					html += '<div style="float:left;height:60px;width:40px;margin:2px;background-color:orange;line-height:60px;">';					
+					html += '</div>';
+				
+				}
+				*/
+				
+			}
+			
+			while (stack.length > 0 && curnode.sibling == null)
+			{
+				if (curnode.id.match(/^id/)) {
+				} else {
+					html += '<br style="clear: both;" />';
+				}			
+			
+				curnode = stack.pop();
+				
+				
+				
+				html += '</div>';
+			}
+			
+			if (stack.length == 0)
+			{
+				curnode = null;
+			}
+			else
+			{
+				curnode = curnode.sibling;
+			}
+		}
+	}	
+	
+	console.log(html);
+	
+	document.getElementById('tree').innerHTML = html;
+	
+	/*
+	var n = new NodeIterator(t.root);
+	var q = n.Begin();
+	while (q != null)
+	{	
+		console.log(q.label);
+		q = n.Next();
+	}	
+	*/
+
+/*	
+	stack.push(curnode);
+	
+	var q = null;
+	q = t.NewNode('Aptenocanthon');
+	t.label_to_node_map['Aptenocanthon'] = q;
+	
+	if (stack[stack.length - 1].child) {
+		curnode.sibling = q;
+	} else {
+		stack[stack.length - 1].child = q;
+	}
+	q.ancestor = stack[stack.length - 1];
+	curnode = q;
+	
+	
+	
+	
+
+q = this.NewNode();
+						curnode.child = q;
+						q.ancestor = curnode;
+						curnode = q;					
+
+	
+	*/
+
+
+
+</script>
+
+
+</body>
+</html>
