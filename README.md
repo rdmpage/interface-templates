@@ -1,2 +1,3 @@
-# interface-templates
-Templates for websites, and notes on interface designs.
+# Interface Templates
+
+Templates for websites, and notes on interface design.
