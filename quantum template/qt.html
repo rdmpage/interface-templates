@@ -1,0 +1,621 @@
+
+<html>
+<head>
+</head>
+<body>
+
+<div id="treemap" style="position:relative;width:1000px;height:1000px;background:rgb(224,224,224);"></div>
+
+
+<script>
+
+var Rectangle = function (x, y, w, h) {
+	this.x = x;
+	this.y = y;
+	this.w = w;
+	this.h = h;
+	//this.id = id;
+	//this.label = label;
+}
+
+Rectangle.prototype.area = function() {
+	return this.w * this.h;	
+}
+
+Rectangle.prototype.aspectRatio = function() {
+	return this.w / this.h;	
+}
+
+Rectangle.prototype.merge = function(rect) {
+	var right = Math.max(this.x + this.w, rect.x + rect.w);
+	var bottom = Math.max(this.y + this.h, rect.y + rect.h);
+	
+	this.x = Math.min(this.x, rect.x);
+    this.y = Math.min(this.y, rect.y);
+    
+    this.w = right - this.x;
+    this.h = bottom - this.y;
+}
+
+
+Rectangle.prototype.toString = function() {
+	var j = { x: this.x, y: this.y, w: this.w, h: this.h };
+	return JSON.stringify(j);
+}
+
+
+var INDEX_BY_MIDDLE = 1;
+var EXPECTED_WASTE_FACTOR = 1.15;
+
+var QuantumTreemap = function (sizes, box) {
+	this.origSizes = sizes;
+	this.origBox = box;
+	this.origiar = 0.0;
+	this.indexType = INDEX_BY_MIDDLE;
+	this.squarified = false; // for now, need to add alternative layout code
+	this.numQuadLayouts = 0;
+	this.numSnake3Layouts = 0;
+	this.numSnake4Layouts = 0;
+	this.numSnake5Layouts = 0;
+	this.resultRects = [];
+	this.boundingBox; // actual dimensions of treemap
+};
+
+
+QuantumTreemap.prototype.quantumLayout = function() {
+	this.numQuadLayouts = 0;
+	this.numSnake3Layouts = 0;
+	this.numSnake4Layouts = 0;
+	this.numSnake5Layouts = 0;
+
+	var area = this.computeSize(this.origSizes);
+	area *= EXPECTED_WASTE_FACTOR;
+	var ar = this.origBox.aspectRatio();
+	var h = Math.ceil(Math.sqrt(area / ar));
+	var w = Math.ceil(area / h);
+	
+	console.log("ar=" + ar + ", w=" + w + ", h=" + h);
+	
+	var box = new Rectangle(this.origBox.x, this.origBox.y, this.origBox.x + w, this.origBox.y + h);
+	
+	console.log("area=" + area);
+	console.log("box=" + JSON.stringify(box));
+	
+	var boxAR = box.aspectRatio();
+	var growWide = ((boxAR >= 1) ? true : false);
+	
+	console.log("ar=" + ar);
+	console.log("boxAR=" + boxAR);
+	
+	this.resultRects = this.quantumLayoutParams(this.origSizes, box, growWide);
+	
+	w = 0;
+	h = 0;
+	
+	for (var i in this.resultRects) {
+	   w = Math.max(w, this.resultRects[i].x + this.resultRects[i].w);
+	   h = Math.max(h, this.resultRects[i].y + this.resultRects[i].h);
+	}
+	this.boundingBox = new Rectangle(0,0,w,h);
+	
+	console.log(JSON.stringify(this.boundingBox));
+	console.log(JSON.stringify(this.resultRects));
+}
+
+
+QuantumTreemap.prototype.quantumLayoutParams = function (sizes, box, growWide) {
+	var boxes = [];
+	var pivotIndex = this.computePivotIndex(sizes);
+	var pivotSize = sizes[pivotIndex];
+	var boxAR = box.aspectRatio();
+	var newGrowWidth = false;
+	
+	if (sizes.length == 1) {
+		boxes.push(box);
+		return boxes;
+	}
+		
+	if (sizes.length == 2) {
+		var ratio = sizes[0] / (sizes[0] + sizes[1]);
+		console.log("ratio=" + ratio);
+		console.log("boxAR=" + boxAR);
+		if (growWide) {
+			var dim1 = this.computeTableLayout(sizes[0], boxAR * ratio);
+			var dim2 = this.computeTableLayout(sizes[1], boxAR * ratio);
+			var h = Math.max(dim1[1], dim2[1]);
+			
+			console.log("dim1=" + dim1);
+			console.log("dim2=" + dim2);
+			
+			dim2 = this.computeTableLayoutGivenHeight(sizes[1], h);
+			boxes[0] = new Rectangle(box.x, box.y, dim1[0], h);
+			boxes[1] = new Rectangle(box.x + dim1[0], box.y, dim2[0], dim2[1]);
+			
+		} else {
+			var dim1 = this.computeTableLayout(sizes[0], boxAR / ratio);
+			var dim2 = this.computeTableLayout(sizes[1], boxAR / (1 - ratio));
+			var w = Math.max(dim1[0], dim2[0]);
+			
+			console.log("dim1=" + dim1);
+			console.log("dim2=" + dim2);
+			
+			
+			dim2 = this.computeTableLayoutGivenWidth(sizes[1], w);
+			boxes[0] = new Rectangle(box.x, box.y, w, dim1[1]);
+			boxes[1] = new Rectangle(box.x, box.y + dim1[1], dim2[0], dim2[1]);
+
+		}
+		return boxes;
+	}
+		
+	// More than 2 
+		var box2 = null;
+		var r1 = null;
+		var r2 = null;
+		var r3 = null;
+		var rp = null;
+		var l1 = [];
+		var l2 = [];
+		var l3 = [];
+		
+		var l1boxes = [];
+		var l2boxes = [];
+		var l3boxes = [];
+
+		var l1FinalBox = null;
+		var l2FinalBox = null;
+		
+		console.log("pivotIndex=" + pivotIndex);
+				
+		// First compute R1
+		if (pivotIndex > 0) {
+			l1 = sizes.slice(0, pivotIndex);
+			var l1Size = this.computeSize(l1);
+			var b2Size = this.computeSizeBetween(sizes, pivotIndex, sizes.length - 1);
+			
+			if (growWide) {
+				dim1 = this.computeTableLayoutGivenHeight(l1Size, box.h);
+				dim2 = this.computeTableLayoutGivenHeight(b2Size, box.h);
+				r1 = new Rectangle(box.x, box.y, dim1[0], dim1[1]);
+				box2 = new Rectangle(box.x + dim1[0], box.y, dim2[0], dim2[1]);
+			} else {
+				dim1 = this.computeTableLayoutGivenWidth(l1Size, box.w);
+				dim2 = this.computeTableLayoutGivenWidth(b2Size, box.w);
+				r1 = new Rectangle(box.x, box.y, dim1[0], dim1[1]);
+				box2 = new Rectangle(box.x, box.y + dim1[1], dim2[0], dim2[1]);			
+			}
+		}
+		else
+		{
+			box2 = new Rectangle(box.x, box.y, box.w, box.h);
+		}
+		
+		//console.log(box2);
+		
+		//console.log('box2=' + box2.toString());
+		
+		// Recurse on R1 to compute better box2
+		
+		console.log('Recurse on R1 to get better box2');
+		
+		if (l1.length != 0) {
+			if (l1.length > 1) {
+				var r1AR = r1.aspectRatio();
+				if (r1AR == 1) {
+					newGrowWidth = growWide;
+				} else {
+					newGrowWidth = ((r1AR >= 1) ? true : false);
+				}
+				l1boxes = this.quantumLayoutParams(l1, r1, newGrowWidth);
+			}
+			else
+			{
+				l1boxes[0] = r1;
+			}
+			
+			l1FinalBox = this.computeUnion(l1boxes);
+			if (growWide) {
+				box2.h = r1.h;
+			} else {
+				box2.w = r1.w;
+			}
+
+		}
+		
+		console.log('box2=' + box2.toString());
+
+		console.log("l1FinalBox=" + JSON.stringify(l1FinalBox));
+		
+		// Then compute R2 and R3
+		var box2AR = box2.aspectRatio();
+		var first = true;
+		var bestAR = 0.0;
+		var bestdim1 = [];
+		var bestIndex = 0;
+		var bestl2Size = 0;
+		for (var i = pivotIndex+1; i < sizes.length; i++) {
+			var l2Size = this.computeSizeBetween(sizes, pivotIndex+1, i);
+			var ratio = pivotSize/(pivotSize + l2Size);
+			var dim1 = [];
+			if (growWide) {
+				var h1 = Math.ceil(ratio * box2.h);
+				dim1 = this.computeTableLayoutGivenHeight(pivotSize, h1);
+			} else {
+				var w1 = Math.ceil(ratio * box2.w);
+				dim1 = this.computeTableLayoutGivenWidth(pivotSize, w1);
+			}
+			
+			var pivotAR = Math.max(dim1[0]/dim1[1] , dim1[1]/dim1[0]);
+						
+			if (first || (pivotAR < bestAR)) {
+				first = false;
+				bestAR = pivotAR;
+				bestdim1 = dim1;
+				bestl2Size = l2Size;
+				bestIndex = i;
+			}
+		}	
+		
+		console.log("Best split: pivot=" + pivotIndex + ", bestIndex=" + bestIndex + ", bestAR=" + bestAR + ", bestdim1=[" + bestdim1[0] + ',' + bestdim1[1] + "]");
+
+		if (bestIndex > 0) {
+			l2 = sizes.slice(pivotIndex+1, bestIndex+1);
+			
+			var nl3 = sizes.length - 1 - bestIndex;
+			if ((nl3) > 0) {
+				l3 = sizes.slice(bestIndex+1);
+			}
+		}
+		
+		console.log("sizes " + JSON.stringify(sizes) + " l1" + JSON.stringify(l1) + " l2 " + JSON.stringify(l2) + " l3" + JSON.stringify(l3));
+/*		echo "\nSplit:\n";
+		echo "l1\n";
+		print_r($l1);
+		echo "l2\n";
+		print_r($l2);
+		echo "l3\n";
+		print_r($l3);*/
+				
+				
+		if (l2.length > 0) {
+			if (growWide) {
+				dim2 = this.computeTableLayoutGivenHeight(bestl2Size, box2.h - bestdim1[1]);
+				rp = new Rectangle(box2.x, box2.y, bestdim1[0], bestdim1[1]);
+				r2 = new Rectangle(box2.x, box2.y + dim1[1], dim2[0], dim2[1]);
+				
+				if (l3.length > 0) {
+					l3size = this.computeSizeBetween(sizes, bestIndex+1, sizes.length - 1);
+					dim3 = this.computeTableLayoutGivenHeight(l3size, box2.h);
+					r3 = new Rectangle(box2.x + dim2[0], box2.y, dim3[0], dim3[1]);
+				}
+			} else {
+				dim2 = this.computeTableLayoutGivenWidth(bestl2Size, box2.w - bestdim1[0]);
+				rp = new Rectangle(box2.x, box2.y, bestdim1[0], bestdim1[1]);
+				r2 = new Rectangle(box2.x + dim1[0], box2.y, dim2[0], dim2[1]);
+				
+				if (l3.length > 0) {
+					l3size = this.computeSizeBetween(sizes, bestIndex+1, sizes.length - 1);
+					dim3 = this.computeTableLayoutGivenWidth(l3size, box2.w);
+					r3 = new Rectangle(box2.x, box2.y + dim2[1], dim3[0], dim3[1]);
+				}
+			}
+		} else {
+			if (growWide) {
+				dim1 = this.computeTableLayoutGivenHeight(pivotSize, r1.h);
+			} else {
+				dim1 = this.computeTableLayoutGivenWidth(pivotSize, r1.w);
+			}		
+			rp = new Rectangle(box2.x, box2.y, dim1[0], dim1[1]);
+		}				
+			
+		/*echo "dim1\n";print_r($dim1);
+		echo "dim2\n";print_r($dim2);
+		echo "dim3\n";print_r($dim3);*/
+		
+		//echo "rp = ";$rp->Dump(); echo "<br/>";
+		//echo "r2 = ";$r2->Dump(); echo "<br/>";
+		/*
+		if ($r3)
+		{
+			echo "r3";$r3->Dump(); echo "<br/>";
+		}
+		
+		*/
+		console.log("dim1=" + JSON.stringify(dim1) + ", dim2=" + JSON.stringify(dim2) + ", dim3=" + JSON.stringify(dim3));				
+	
+
+		//------------------------------------------------------------------------------------------
+		// Finally, recurse on sublists in R2 and R3
+		console.log('Recurse on sublists in R2 and R3');
+		if (l2.length != 0) {
+			if (l2.length > 1) {
+				var r2AR = r2.aspectRatio();
+				
+				if (r2AR == 1) {
+					newGrowWide = growWide;
+				} else {
+					newGrowWide = ((r2AR >= 1) ? true : false);
+				}
+				l2boxes = this.quantumLayoutParams(l2, r2, newGrowWide);
+			} else {
+				l2boxes[0] = r2;
+			}
+			l2FinalBox = this.computeUnion(l2boxes);
+			
+			console.log('Final R2 box=' + JSON.stringify(l2FinalBox));
+		}
+
+		if (l3.length != 0)
+		{
+			if (l3.length > 1)
+			{
+				var r3AR = r3.aspectRatio();
+				if (r3AR == 1) {
+					newGrowWide = growWide;
+				} else {
+					newGrowWide = ((r3AR >= 1) ? true : false);
+				}
+				l3boxes = this.quantumLayoutParams(l3, r3, newGrowWide);
+			} else {
+				l3boxes[0] = r3;
+			}
+			l3FinalBox = this.computeUnion(l3boxes);
+			
+			console.log('Final R3 box=' + JSON.stringify(l3FinalBox));
+		}
+		
+		
+		var rp_array = [];			
+		var r3_array = []; // empty
+		rp_array.push(rp);
+
+		// stuff
+		
+		if (l1.length > 0) {
+			boxes = boxes.concat(l1boxes);
+		}
+		
+		boxes.push(rp_array[0]);
+		
+		if (l2.length > 0) {
+			boxes = boxes.concat(l2boxes);
+		}
+		if (l3.length > 0) {
+			boxes = boxes.concat(l3boxes);
+		}
+		
+		var boxAR = box.aspectRatio();
+		var newGrowWide = false;
+		if (boxAR == 1) {
+			newGrowWide = growWide;
+		} else {
+			newGrowWide = ((boxAR >= 1) ? true : false);
+		}
+		if (this.squarified) {
+			// to do
+			// boxes = tryAlternativeLayouts(sizes, box, boxes, newGrowWide);
+		}
+		
+
+		return boxes;			
+		
+
+
+}
+
+QuantumTreemap.prototype.translateBoxesTo = function(boxes, x, y) {
+   	var box = this.computeUnion(boxes);
+	var dx = x - box.x;
+	var dy = y - box.y;
+	for (var i in boxes) {
+	   boxes[i].x += dx;
+	   boxes[i].y += dy;
+	}
+}			
+		
+QuantumTreemap.prototype.computeUnion = function(boxes) {
+	var x1 = 0;
+	var y1 = 0;
+	var x2 = 0;
+	var y2 = 0;
+	
+	var box = new Rectangle(boxes[0].x, boxes[0].y, boxes[0].w, boxes[0].h);
+	for (var i in boxes) {
+	   x1 = Math.min(box.x, boxes[i].x);
+	   x2 = Math.max(box.x + box.w, boxes[i].x + boxes[i].w);
+	   y1 = Math.min(box.y, boxes[i].y);
+	   y2 = Math.max(box.y + box.h, boxes[i].y + boxes[i].h);
+	   
+	   box.x = x1;
+	   box.y = y1;
+	   box.w = x2 - x1;
+	   box.h = y2 - y1;
+	}
+	return box;
+}
+	
+QuantumTreemap.prototype.computeTableLayout = function(numItems, ar) {
+	var h = 0;
+	var w = 0;
+	
+	if (ar > 1) {
+		h = Math.ceil(Math.sqrt(numItems/ar));
+		if (h == 0) {
+			h = 1;
+		}
+		w = Math.floor(numItems/h);
+		if ((w * h) < numItems) {
+			w++;
+			h--;
+		}
+		while ((w * h) < numItems) {
+		  h++;
+		}
+	} else {
+		w = Math.ceil(Math.sqrt(numItems/ar));
+		if (w == 0) {
+			w = 1;
+		}
+		h = Math.floor(numItems/w);
+		if ((w * h) < numItems) {
+			h++;
+			w--;
+		}
+		while ((w * h) < numItems) {
+		  w++;
+		}
+	
+	}
+	
+	return [w, h];
+}
+
+	
+QuantumTreemap.prototype.computeTableLayoutGivenHeight = function(numItems, height) {		
+	if (height < 1) { 
+		height = 1; 
+	}
+	var w = Math.ceil(numItems / height);
+	return [w, height];
+		
+}
+
+QuantumTreemap.prototype.computeTableLayoutGivenWidth = function(numItems, width) {
+	if (width < 1) { 
+		width = 1; 
+	}
+	var h = Math.ceil(numItems / width);
+	return [width, h];
+}
+	
+
+QuantumTreemap.prototype.computeSize = function(arr) {
+	var size = 0;
+	for (var i in arr) {
+		size += arr[i];
+	}
+	return size;
+}
+
+QuantumTreemap.prototype.computePivotIndex = function(sizes) {
+	var index = 0;
+	var first = true;
+	var bestRatio = 0;
+	
+	switch (this.indexType) {
+		case INDEX_BY_MIDDLE:
+			index = Math.floor((sizes.length - 1) / 2.0);
+			break;
+			
+		default:
+			break;
+	}
+	
+	return index;
+}
+
+
+QuantumTreemap.prototype.computeSizeBetween = function(sizes, i1, i2) {
+	var size = 0;
+	for (var i = i1; i <= i2; i++) { 
+		size += sizes[i]; 
+	}
+	return size;
+}
+	
+
+
+//var sizes = [4,2];
+var sizes = [3,20,20,1];
+
+//sizes = [10,10,3,6]; // fails, bug somewhere
+//sizes = [10,10,6,6];
+
+sizes = [5,10,20,6,4,1];
+
+sizes = [5,10,8,5]; // fail
+sizes = [5,10,8,5]; // works
+sizes = [5,10,12,5]; // fail
+
+console.log("sizes=" + JSON.stringify(sizes));
+
+var r = new Rectangle(0,0,600,800);
+var qt = new QuantumTreemap(sizes, r);
+qt.quantumLayout();
+
+var html = '';
+
+var scale = 50;
+
+	html += '<div style="position:absolute;'
+		+ 'left:' 	+ (scale * qt.boundingBox.x) + 'px;'
+		+ 'top:' 	+ (scale * qt.boundingBox.y) + 'px;'
+		+ 'width:' 	+ (scale * qt.boundingBox.w) + 'px;'
+		+ 'height:' + (scale * qt.boundingBox.h) + 'px;'
+		
+		+ 'border:1px solid red;'	
+		+ '">';
+	html += '</div>';
+
+
+
+for (var i in qt.resultRects) {
+	html += '<div style="position:absolute;'
+		+ 'left:' 	+ (scale * qt.resultRects[i].x) + 'px;'
+		+ 'top:' 	+ (scale * qt.resultRects[i].y) + 'px;'
+		+ 'width:' 	+ (scale * qt.resultRects[i].w) + 'px;'
+		+ 'height:' + (scale * qt.resultRects[i].h) + 'px;'
+		
+//		+ "background:" + '#'+Math.floor(Math.random()*16777215).toString(16) + ';' // https://www.paulirish.com/2009/random-hex-color-code-snippets/
+		+ 'border:1px solid white;'	
+		+ '">';
+	html += '</div>';
+}
+		
+
+for (var i in qt.resultRects) {
+	var count = 0;
+	var color = Math.floor(Math.random()*16777215).toString(16);  // https://www.paulirish.com/2009/random-hex-color-code-snippets/
+	for (var j = 0; j < qt.resultRects[i].w; j++) {	
+		
+	
+		
+		for (var k = 0; k < qt.resultRects[i].h; k++) {
+			var x = qt.resultRects[i].x + j;
+			var y = qt.resultRects[i].y + k;
+			
+			if (count < qt.origSizes[i]) {
+		
+			html += '<div style="position:absolute;'
+				+ 'left:' 	+ (scale * x) + 'px;'
+				+ 'top:' 	+ (scale * y) + 'px;'
+				+ 'width:' 	+ scale + 'px;'
+				+ 'height:' + scale + 'px;'
+				+ "background:" + '#'+ color + ';'
+		
+				+ "border-right:1px solid white;border-bottom:1px solid white;"
+				
+		
+				+ '">';
+				
+			html += '</div>';
+			
+			}
+			count++;
+		
+		}	
+	}
+}
+
+
+
+document.getElementById('treemap').innerHTML = html;
+
+
+
+
+</script>
+</body>
+</html>
+
+
