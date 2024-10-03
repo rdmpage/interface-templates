@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {
+  margin: 0;
+  font-family: sans-serif;
+}
+
+aside {
+    width:200px;
+	border:1px solid black;
+	position: fixed;
+}
+
+main {
+  margin-left: 200px;
+  border:1px solid red;
+  text-align:center;
+  
+}
+
+/* small */
+@media screen and (max-width: 700px) {
+  aside {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+  main {margin-left: 0;}
+}
+
+
+</style>
+
+
+</head>
+<body>
+
+<!-- some ideas borrowed from https://www.w3schools.com/howto/howto_css_sidebar_responsive.asp -->
+
+<!-- also inspired by Hathi redesign -->
+
+<div>
+xxx
+</div>
+
+<div>
+<aside>
+<details id="details">
+<summary>Details</summary>
+[Metadata goes here]
+<img width="150" src="image-1.png">
+[Map goes here]
+</details>
+</aside>
+
+<main>
+	<img width="100%" src="image-4.png">
+</main>
+</div>
+
+<script>
+// https://www.nray.dev/blog/using-media-queries-in-javascript/#:~:text=Using%20matchMedia()%20in%20JavaScript,-The%20matchMedia%20API&text=%2F%2F%20Set%20a%20media%20query,involving%20the%20media%20query%20above.
+
+// Set a media query in JavaScript.
+const mediaQuery = matchMedia("(max-width: 700px)");
+ 
+// Listen to viewport width changes involving the media query above.
+const handler = (e) => {
+  // Using `e.matches` is not prone to expensive style recalcs/layout
+  // that checking properties like `window.innerWidth` might cause.
+  if (e.matches) {
+    document.getElementById('details').open = false;
+  } else {
+    document.getElementById('details').open = true;
+    
+  }
+};
+ 
+// If the browser supports the `addEventListener` API, the following
+// line will be truthy, so we use it. If not, it will be falsy, and we
+// use the deprecated `addListener` API.
+mediaQuery.addEventListener
+  ? mediaQuery.addEventListener("change", handler)
+  : mediaQuery.addListener(handler);
+ 
+// Check during page load.
+handler(mediaQuery);
+
+</script>
+</body>
+</html>
+
+
