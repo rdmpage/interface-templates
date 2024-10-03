@@ -1,0 +1,205 @@
+<html>
+<head>
+
+<meta name="theme-color" content="AliceBlue">
+<!-- <meta name="color-scheme" content="dark"> -->
+
+<style>
+
+
+
+:root {
+  --main-sidebar-width: 100px;
+}
+
+body {
+	padding: 0px;
+	margin: 0px;
+	overflow-y:hidden;
+	overflow-x:hidden;
+	background-color: AliceBlue;
+	
+	font-family:"Helvetica Neue", Arial, sans-serif;
+	color:black;
+}
+
+.sidebar {
+  position: fixed;
+  width: var(--main-sidebar-width);
+  height: 100%;
+}
+
+.container {
+  position:relative;
+  flex-direction:row;
+  display:flex;
+  width:auto;
+  height:100%;
+  
+  margin-left: var(--main-sidebar-width);
+  
+  margin-right:0.5em;
+  
+  overflow-y:auto;
+}
+
+.child {
+  display: block;
+  border-radius:0.5em;
+
+  height:calc(hv - 1em);
+  
+  max-width:300px;
+  min-width:300px;
+  
+  background-color: white;
+  
+  border: 1px solid LightSteelBlue;
+  
+  margin:0.5em;
+  padding:1em;
+  
+   overflow-y:auto;
+}
+
+.card {
+	display:flex;
+	border: 1px solid LightSteelBlue;
+	background-color: white;
+	border-radius:4px;
+  padding:0.5em;
+  
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 1px 5px 0px;
+  
+  margin-bottom: 1em;
+  
+  font-size:0.9em;
+  
+ 
+	
+
+}
+
+.child h2 {
+	padding:0;
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+	font-size:1.1em;
+}
+
+.card .title {
+	font-weight:bold;
+	font-size:1em;
+	padding-bottom:1em;
+}
+
+.card-body {
+	display:flex 1;
+	padding:0.5em;
+	
+	line-height:1.4;
+	color: #333333;
+}
+
+.card-tabs {
+	display:flex 1;
+	padding-left:0.5em;
+	vertical-align:top;
+	border-left:1px solid LightSteelBlue;
+}
+
+.next {
+	border:1px solid SlateBlue;
+	display:block;
+	margin-bottom:0.5em;
+	padding:0.5em;
+	border-radius:4px;
+	text-align:center;
+	font-size:0.8em;
+}
+
+.sidebar .button {
+	border:1px solid SlateBlue;
+	display:block;
+	text-align:center;
+	margin:0.5em;
+	padding:0.5em;
+	border-radius:4px;
+}
+
+.selected {
+	background-color:LightSkyBlue;
+	border:1px solid SlateBlue;
+}
+
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+	<div class="button">Papers</div>
+	<div class="button">Taxa</div>
+</div>
+
+
+<div class='container'>
+  <div class='child'><h2>Card</h2>
+  	<div class="card">
+  	
+  	<div class="card-body">
+  	<div class="title">A simple, fast, and accurate algorithm to estimate large phylogenies by maximum likelihood.</div>
+  	<div>This work has used extensive and realistic computer simulations to show that the topological accuracy of this new method is at least as high as that of the existing maximum-likelihood programs and much higher than the performance of distance-based and parsimony approaches.</div>
+  	</div>
+
+  	<div class="card-tabs">
+  	
+  	<div class="next selected">
+  		[20]<br>Cites
+  	</div>
+  	<div class="next">
+  		[3]<br>Authors
+  	</div>
+   	<div class="next">
+ 		[5]<br>Funding
+ 	</div>
+   	<div class="next">
+ 		[100]<br>Related
+ 	</div>
+  		
+  	</div>
+  	
+  	</div>
+  </div>
+  <div class='child'><h2>List</h2>
+  
+  <div class="card"><div class="card-body">MrBayes 3.2: Efficient Bayesian Phylogenetic Inference and Model Choice across a Large Model Space</div></div>
+  <div class="card selected"><div class="card-body">Toward Defining the Course of Evolution: Minimum Change for a Specific Tree Topology</div></div>
+  <div class="card"><div class="card-body">MUSCLE: multiple sequence alignment with high accuracy and high throughput</div></div>
+  <div class="card"><div class="card-body">Bioedit: a user-friendly biological sequence alignment editor and analysis program for windows 95/98/ nt</div></div>
+  <div class="card"><div class="card-body">Clustal w: improving the sensitivity of progressive multiple sequence alignment through sequence weighting, position-specific gap penalties and weight matrix choice</div></div>
+  <div class="card"><div class="card-body">Confidence limits on phylogenies: an approach using the bootstrap.</div></div>
+  <div class="card"><div class="card-body">The CLUSTAL_X windows interface: flexible strategies for multiple sequence alignment aided by quality analysis tools.</div></div>
+   
+  </div>
+  <div class='child'><h2>Card</h2></div>
+  <!--
+  <div class='child'><b>child 4</b></div>
+  <div class='child'><b>child 5</b></div>
+  <div class='child'><b>child 6</b></div>
+  <div class='child'><b>child 7</b></div>
+  <div class='child'><b>child 8</b></div> 
+  -->
+</div>
+
+
+
+
+</body>
+</html>
+
+
+MUSCLE: multiple sequence alignment with high accuracy and high throughput
+Bioedit: a user-friendly biological sequence alignment editor and analysis program for windows 95/98/ nt
+Clustal w: improving the sensitivity of progressive multiple sequence alignment through sequence weighting, position-specific gap penalties and weight matrix choice
+Confidence limits on phylogenies: an approach using the bootstrap.
+The CLUSTAL_X windows interface: flexible strategies for multiple sequence alignment aided by quality analysis tools.
